@@ -1,0 +1,3 @@
+from FullyConnectedNetwork import FullyConnectedNetwork, FullyConnectedDuelingNetwork, FullyConnectedActorCriticNetwork, FullyConnectedCriticNetwork
+from TabularNetwork import TabularNetwork
+from ConvolutionalNetworks import ConvolutionalNetwork, ConvolutionalDuelingNetwork, ConvolutionalActorCriticNetwork
