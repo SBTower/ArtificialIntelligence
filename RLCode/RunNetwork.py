@@ -3,8 +3,8 @@ from Environments import GymEnvironment, MazeEnvironment, GridworldEnvironment, 
 from Agents import Agent
 from Agents.Policies import Policy
 from Agents.Policies.Explorers import EpsilonGreedyExplorer, NoExplorer
-from Agents.Policies.Learners import QLearning, DeepQNetwork, ConvNetValuePredictor, AdvantageActorCritic, DDPG
-from Agents.Policies.Learners.Networks import FullyConnectedActorCriticNetwork, FullyConnectedDuelingNetwork, FullyConnectedCriticNetwork, FullyConnectedNetwork, ConvolutionalActorCriticNetwork
+from Agents.Policies.Learners import QLearning, DeepQNetwork, AdvantageActorCritic, DDPG
+from Networks.FullyConnectedNetwork import FullyConnectedActorCriticNetwork, FullyConnectedDuelingNetwork, FullyConnectedCriticNetwork, FullyConnectedNetwork
 import numpy as np
 import tensorflow as tf
 import copy
@@ -23,5 +23,5 @@ with tf.Session() as sess:
   controller = OrderedController(environment = env, agent = agent, batchSize = 30, updateTargetRate = None)
 
   controller.render = True
-  controller.runOneEpisode()
+  controller.run_one_episode()
   learner.loadNetwork('AvoidBarriersEnvWorker_1-Network-1200')

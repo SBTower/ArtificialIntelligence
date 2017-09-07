@@ -1,46 +1,33 @@
-from History import ExperienceHistory
-from Policies import Policy
+from Agents.History.ExperienceHistory import ExperienceHistory
+
 
 class Agent:
+    def __init__(self, policy, number_of_planning_steps=0):
+        self.policy = policy
+        self.history = ExperienceHistory()
+        self.num_planning_steps = number_of_planning_steps
 
-  def __init__(self, policy, numPlanningSteps = 0, lmda = 0, minimumWeight = 0.01):
-    self.policy = policy
-    self.history = ExperienceHistory()
-    self.numPlanningSteps = numPlanningSteps
-    self.lmda = lmda
-    self.minimumWeight = minimumWeight
+    def get_action(self, state):
+        action = self.policy.get_action(state)
+        return action
 
-  def getAction(self, state):
-    action = self.policy.getAction(state)
-    return action
+    def update_policy(self, experience):
+        self.policy.update(experience)
+        self.run_planning_steps()
 
-  def updatePolicy(self, experience):
-    if self.lmda > 0:
-      for exp in self.history.history:
-        exp.reward = experience.reward
-        exp.nextState = experience.nextState
-        exp.nextAction = experience.nextAction
-        if exp.trace > self.minimumWeight:
-          self.policy.update(exp)
-    else:
-      self.policy.update(experience)
-    self.runPlanningSteps()
+    def update_history(self, experience):
+        self.history.add_to_history([experience])
 
-  def updateHistory(self, experience):
-    self.history.addToHistory([experience])
-    self.history.updateTraces(experience, self.lmda)
+    def run_planning_steps(self):
+        history_for_planning = self.history.select_random_samples(self.num_planning_steps)
+        for experience in history_for_planning:
+            experience.next_action = self.get_action(experience.next_state)
+            self.policy.update(experience)
 
-  def runPlanningSteps(self):
-    historyForPlanning = self.history.selectRandomSamples(self.numPlanningSteps)
-    for experience in historyForPlanning:
-      experience.nextAction = self.getAction(experience.nextState)
-      experience.trace = 1
-      self.policy.update(experience)
+    def update_policy_batch(self, batch_size):
+        experience_batch = self.history.select_random_samples(batch_size)
+        self.policy.update(experience_batch)
 
-  def updatePolicyBatch(self, batchSize):
-    experienceBatch = self.history.selectRandomSamples(batchSize)
-    self.policy.update(experienceBatch, False)
-
-  def updatePolicyOrdered(self, batchSize):
-    experienceBatch = self.history.selectLatestSamples(batchSize)
-    self.policy.update(experienceBatch, True)
+    def update_policy_ordered(self, batch_size):
+        experience_batch = self.history.select_latest_samples(batch_size)
+        self.policy.update(experience_batch)

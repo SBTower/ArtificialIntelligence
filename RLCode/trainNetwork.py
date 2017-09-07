@@ -1,44 +1,75 @@
+from Controller import BatchController, OrderedController
+from Environments.AvoidBarriersEnvironment import AvoidBarriersEnvironment
+from Environments.NavigateToGoalEnvironment import NavigateToGoalEnvironment
+from Environments.MazeEnvironment import MazeEnvironment
+from Environments.GymEnvironment import GymEnvironment
+from Environments.PMEnv import PMEnv
+from Agents.Agent import Agent
+from Agents.Policies.Policy import Policy
+from Agents.Policies.Explorers.EpsilonGreedyExplorer import EpsilonGreedyExplorer
+from Agents.Policies.Explorers.NoisyActionExplorer import NoisyActionExplorer
+from Agents.Policies.Learners.DeepQNetwork import DeepQNetwork
+from Agents.Policies.Learners.QLearning import QLearning
+from Agents.Policies.Learners.DDPG import DDPG
+from Networks.FullyConnectedNetwork import FullyConnectedDuelingNetwork, FullyConnectedNetwork, FullyConnectedCriticNetwork, FullyConnectedActorCriticNetwork
+from Networks.TabularNetwork import TabularNetwork
 
-from Controller import OrderedController, BatchController
-from Environments import GymEnvironment, MazeEnvironment, GridworldEnvironment, AVEnvironment, PredictiveMaintenanceEnvironment, PMEnv, AvoidBarriersEnvironment, NavigateToGoalEnvironment
-from Agents import Agent
-from Agents.Policies import Policy
-from Agents.Policies.Explorers import EpsilonGreedyExplorer, NoisyActionExplorer
-from Agents.Policies.Learners import QLearning, DeepQNetwork, ConvNetValuePredictor, DDPG
 import numpy as np
 import tensorflow as tf
+from gym import wrappers
 
-numGames = 10000
-step = 10
+numGames = 5000
+step = 50
 rewards = np.zeros(numGames)
 avgRewards = []
+network_to_load = None
+previous_number_of_episodes = 0
+save_network_file_name = 'Pendulum'
+render_environment = True
+epsilon = 1.0
+epsilon_decay = 0.00005
+epsilon_min = 0.05
+batch_size = 200
+update_target_rate = 10
+learning_rate = 0.0001  # alpha
+number_of_planning_steps = 0
+discount_factor = 0.99
 
-#env = GymEnvironment('CartPole-v0')
-#env = AvoidBarriersEnvironment()
-env = NavigateToGoalEnvironment(maxEpisodeLength = 100)
-#env = MazeEnvironment('Maze1')
-#env = AVEnvironment()
-possibleActions = env.getPossibleActions()
+env = GymEnvironment('Pendulum-v0')
+
+env.num_episodes = previous_number_of_episodes
+
+possible_actions = env.get_possible_actions()
+
+actor_network = FullyConnectedNetwork(scope='actor', state_size=env.get_state_size(), action_size=env.get_action_size(), layer_size=[400, 300])
+critic_network = FullyConnectedCriticNetwork(scope='critic', state_size=env.get_state_size(), action_size=env.get_action_size())
 
 with tf.Session() as sess:
 
-  learner = DeepQNetwork(sess, scope = 'global', stateSize = env.getStateSize(), actionSize = env.getActionSize(), async = False)
-  explorer = EpsilonGreedyExplorer(possibleActions = possibleActions, continuous = env.isActionContinuous(), epsilon = 1, epsilonDecay = 0.0001, epsilonMin = 0.05)
-  policy = Policy(learner = learner, explorer = explorer)
-  agent = Agent(policy)
-  controller = BatchController(environment = env, agent = agent, batchSize = 500, updateTargetRate = 1)
+    learner = DDPG(sess, actor_network=actor_network, critic_network=critic_network, learning_rate=learning_rate, discount_factor=discount_factor)
 
-  for n in range(numGames):
-    r = controller.runOneEpisode()
-    controller.render = False
-    rewards[n] = r
-    print 'Episode: ', n, ', Reward: ', r
-    if n%step == 0 and n > 0:
-      controller.render = True
-      #filename = 'AutoVehicleTwo-' + str(n)
-      #controller.agent.policy.learner.saveNetwork(filename)
-      print 'Episode: ', n, ', Reward: ', np.mean(rewards[n-step:n])
-      print controller.agent.policy.explorer.epsilon
-      avgRewards.append(np.mean(rewards[n-step:n]))
-  print avgRewards
+    explorer = EpsilonGreedyExplorer(possible_actions=possible_actions, continuous=env.is_action_continuous(),
+                                     epsilon=epsilon,
+                                     epsilon_decay=epsilon_decay, epsilon_min=epsilon_min)
+    policy = Policy(learner=learner, explorer=explorer)
+    agent = Agent(policy)
+    controller = BatchController(environment=env, agent=agent, batch_size=batch_size, update_target_rate=update_target_rate)
 
+    if network_to_load is not None:
+        controller.agent.policy.learner.actor_network.load_network(sess, network_to_load)
+
+    for n in range(numGames):
+        if n % step == 0 and n >= 0 and render_environment is True:
+            controller.env.render = True
+        else:
+            controller.env.render = False
+        r = controller.run_one_episode()
+        rewards[n] = r
+        print('Episode: ', n, ', Reward: ', r)
+        if n % step == 0 and n > 0:
+            if save_network_file_name is not None:
+                filename = save_network_file_name + str(n + previous_number_of_episodes)
+                controller.agent.policy.learner.actor_network.save_network(sess, filename)
+            print('Episode: ', n, ', Reward: ', np.mean(rewards[n - step + 1:n + 1]))
+            avgRewards.append(np.mean(rewards[n - step + 1:n + 1]))
+print(avgRewards)

@@ -1,80 +1,80 @@
-import csv
-import numpy as np
-import random
 import tensorflow as tf
-import os
-from Learner import Learner
-from Networks import FullyConnectedNetwork, FullyConnectedDuelingNetwork
+import copy
 
-class DeepQNetwork(Learner):
 
-  def buildNN(self):
-    self.tau = 0.1
-    self.network = FullyConnectedDuelingNetwork(self.scope, self.stateSize, self.actionSize)
-    self.targetNetwork = FullyConnectedDuelingNetwork('target_'+self.scope, self.stateSize, self.actionSize)
+class DeepQNetwork():
+    def __init__(self, sess, network, learning_rate=0.1, discount_factor=0.99, tau=0.99):
+        self.sess = sess
+        self.learning_rate = learning_rate
+        self.discount_factor = discount_factor
+        self.tau = tau
+        self.network = network
+        self.target_network = copy.copy(self.network)
+        self.target_network.scope = 'target_' + self.network.scope
+        self.defineUpdateOperations()
+        self.init = tf.global_variables_initializer()
+        self.initialize_variables()
 
-    self.actionTaken = tf.placeholder(tf.int32, [None], name="actionTaken")
-    self.actionMasks = tf.one_hot(self.actionTaken, self.actionSize)
-    self.estimated_action_value = tf.reduce_sum(tf.multiply(self.network.policyLayer, self.actionMasks), reduction_indices=1)
+    def initialize_variables(self):
+        self.sess.run(self.init)
 
-    self.measured_action_value = tf.placeholder(tf.float32, [None,])
-    self.loss = tf.reduce_mean(tf.square(self.estimated_action_value - self.measured_action_value))
+    def defineUpdateOperations(self):
 
-    if self.async is True:
-      local_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
-      self.gradients = tf.gradients(self.loss,local_vars)
-      grads, _ = tf.clip_by_global_norm(self.gradients,40.0)
+        self.actionTaken = tf.placeholder(tf.int32, [None], name="actionTaken")
+        self.actionMasks = tf.one_hot(self.actionTaken, self.network.action_size)
+        self.estimated_action_value = tf.reduce_sum(tf.multiply(self.network.policyLayer, self.actionMasks),
+                                                    reduction_indices=1)
 
-      global_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'global')
-      self.updateModel = tf.train.AdamOptimizer(0.001).apply_gradients(zip(grads, global_vars))
+        self.measured_action_value = tf.placeholder(tf.float32, [None, ])
+        self.loss = tf.reduce_mean(tf.square(self.estimated_action_value - self.measured_action_value))
+        tf.summary.scalar('loss', self.loss)
 
-    else:
-      local_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
-      self.updateModel = tf.train.AdamOptimizer(0.001).minimize(self.loss, var_list=local_vars)
+        local_vars = self.network.get_trainable_vars()
+        self.updateModel = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, var_list=local_vars)
 
-    from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
-    to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'target_'+self.scope)
+        from_vars = self.network.get_trainable_vars()
+        to_vars = self.target_network.get_trainable_vars()
 
-    self.update_target_ops = []
-    for from_var,to_var in zip(from_vars, to_vars):
-      self.update_target_ops.append(to_var.assign(from_var*self.tau + to_var*(1-self.tau)))
+        self.update_target_ops = []
+        for from_var, to_var in zip(from_vars, to_vars):
+            self.update_target_ops.append(to_var.assign(from_var * self.tau + to_var * (1 - self.tau)))
 
-  def updateTargetNetwork(self):
-    self.sess.run(self.update_target_ops)
+    def update_target_network(self):
+        self.sess.run(self.update_target_ops)
 
-  def update(self, batch, ordered):
-    y_ = []
-    state_samples = []
-    actionTaken = []
+    def update(self, batch):
+        y_ = []
+        state_samples = []
+        action_taken = []
 
-    sampleNextState = []
-    sampleCurrentState = []
-    sampleRewards = []
-    sampleDidFinish = []
-    sampleActions = []
-    
-    for experience in batch:
-      sampleNextState.append(experience.nextState)
-      sampleCurrentState.append(experience.state)
-      sampleRewards.append(experience.reward)
-      sampleDidFinish.append(experience.done)
-      sampleActions.append(experience.action)
+        sample_next_state = []
+        sample_current_state = []
+        sample_rewards = []
+        sample_did_finish = []
+        sample_actions = []
 
-    allQ = self.sess.run(self.targetNetwork.policyLayer, feed_dict={self.targetNetwork.inputs:sampleNextState})
+        for experience in batch:
+            sample_next_state.append(experience.next_state)
+            sample_current_state.append(experience.state)
+            sample_rewards.append(experience.reward)
+            sample_did_finish.append(experience.done)
+            sample_actions.append(experience.action)
 
-    for mem in range(len(sampleNextState)):
-      if sampleDidFinish[mem]:
-        y_.append(sampleRewards[mem])
-      else:
-        maxQ = max(allQ[mem])
-        y_.append(sampleRewards[mem] + self.lmda*maxQ)
-      state_samples.append(sampleCurrentState[mem])
-      actionTaken.append(sampleActions[mem])
+        allQ = self.sess.run(self.target_network.policyLayer, feed_dict={self.target_network.inputs: sample_next_state})
 
-    self.sess.run(self.updateModel, feed_dict={self.network.inputs:state_samples, self.measured_action_value:y_, self.actionTaken:actionTaken})
+        for mem in range(len(sample_next_state)):
+            if sample_did_finish[mem]:
+                y_.append(sample_rewards[mem])
+            else:
+                maxQ = max(allQ[mem])
+                y_.append(sample_rewards[mem] + self.discount_factor * maxQ)
+            state_samples.append(sample_current_state[mem])
+            action_taken.append(sample_actions[mem])
 
-  def getHighestValueAction(self, state):
-    pol = self.sess.run(self.network.policyLayer, feed_dict={self.network.inputs:[state]})
-    a = self.sess.run(self.network.maxOutputNode, feed_dict={self.network.inputs:[state]})
-    return a[0]
+        self.sess.run(self.updateModel, feed_dict={self.network.inputs: state_samples, self.measured_action_value: y_,
+                                                   self.actionTaken: action_taken})
 
+    def get_highest_value_action(self, state):
+        # pol = self.sess.run(self.network.policyLayer, feed_dict={self.network.inputs: [state]})
+        a = self.sess.run(self.network.maxOutputNode, feed_dict={self.network.inputs: [state]})
+        return a[0]

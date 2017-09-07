@@ -1,152 +1,165 @@
-
 from scipy import *
-import pylab
-import copy
 import math
-import numpy as np
 import random
-from Vehicles.SimpleVehicle import SimpleVehicle
-from Environment import Environment
-import shapely.geometry
+from .Vehicles.SimpleVehicle import SimpleVehicle
+from .Environment import Environment
 from shapely.geometry import Point
-from shapely.geometry import LineString
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+
 class NavigateToGoalEnvironment(Environment):
+    def __init__(self, width=200, height=200, max_episode_length=100, render=False):
+        self.width = width
+        self.height = height
+        self.maxEpisodeLength = max_episode_length
+        self.render = render
+        self.num_figures_saved = 0
+        self.num_episodes = 0
+        self.current_episode_length = 0
+        pos_x = self.width / 10 + random.random() * 4 * self.width / 5
+        pos_y = self.height / 10 + random.random() * 4 * self.height / 5
+        orientation = random.random() * 2 * math.pi
+        self.boat = SimpleVehicle([pos_x, pos_y, orientation])
+        self.goal = self.create_goal()
+        self.fig = plt.figure()
+        self.initialise_display()
+        if self.render is True:
+            self.save_figure()
+            self.animate()
 
-  def __init__(self, name = None, width = 200, height = 200, maxEpisodeLength = 1000):
-    self.width = width
-    self.height = height
-    self.maxEpisodeLength = maxEpisodeLength
-    pos_x = self.width/10 + random.random()*4*self.width/5
-    pos_y = self.height/10 + random.random()*4*self.height/5
-    orien = random.random()*2*math.pi
-    self.boat = SimpleVehicle([pos_x, pos_y, orien])
-    self.createGoal()
-    self.done = False
-    #self.fig = plt.figure()
-    self.count = 0
+    def get_state(self):
+        sensor_readings = []
 
-  def getState(self):
-    sensorReadings = []
+        #    sensor_readings.append(copy.copy(self.boat.pos[0]))
+        #    sensor_readings.append(copy.copy(self.boat.pos[1]))
+        #    sensor_readings.append(copy.copy(self.boat.pos[2]))
+        #    sensor_readings.append(copy.copy(self.goal[0]))
+        #    sensor_readings.append(copy.copy(self.goal[1]))
+        sensor_readings.append(self.goal[0] - self.boat.pos[0])
+        sensor_readings.append(self.goal[1] - self.boat.pos[1])
+        sensor_readings.append(self.boat.pos[2])
+        #    sensor_readings.append(copy.copy(self.boat.speed))
+        #    sensor_readings.append(copy.copy(self.boat.angularVelocity))
+        #    sensor_readings.append(self.getDistanceToGoal())
+        #    sensor_readings.append(self.getAngleToGoal())
 
-#    sensorReadings.append(copy.copy(self.boat.pos[0]))
-#    sensorReadings.append(copy.copy(self.boat.pos[1]))
-#    sensorReadings.append(copy.copy(self.boat.pos[2]))
-#    sensorReadings.append(copy.copy(self.goal[0]))
-#    sensorReadings.append(copy.copy(self.goal[1]))
-    sensorReadings.append(self.goal[0] - self.boat.pos[0])
-    sensorReadings.append(self.goal[1] - self.boat.pos[1])
-    sensorReadings.append(self.boat.pos[2])
-#    sensorReadings.append(copy.copy(self.boat.speed))
-#    sensorReadings.append(copy.copy(self.boat.angularVelocity))
-#    sensorReadings.append(self.getDistanceToGoal())
-#    sensorReadings.append(self.getAngleToGoal())
+        return sensor_readings
 
-    return sensorReadings    
+    def create_goal(self):
+        goal_x = self.width / 10 + random.random() * 4 * self.width / 5
+        goal_y = self.height / 10 + random.random() * 4 * self.height / 5
+        goal = [goal_x, goal_y]
+        return goal
 
-  def createGoal(self):
-    goal_x = self.width/10 + random.random()*4*self.width/5
-    goal_y = self.height/10 + random.random()*4*self.height/5
-    self.goal = [goal_x, goal_y]
+    def get_distance_to_goal(self):
+        dist_x = self.goal[0] - self.boat.pos[0]
+        dist_y = self.goal[1] - self.boat.pos[1]
+        distance = math.sqrt(dist_x * dist_x + dist_y * dist_y)
+        return distance
 
-  def getDistanceToGoal(self):
-    dist_x = self.goal[0] - self.boat.pos[0]
-    dist_y = self.goal[1] - self.boat.pos[1]
-    distance = math.sqrt(dist_x*dist_x + dist_y*dist_y)
-    return distance
+    def get_angle_to_goal(self):
+        dist_x = self.goal[0] - self.boat.pos[0]
+        dist_y = self.goal[1] - self.boat.pos[1]
 
-  def getAngleToGoal(self):
-    dist_x = self.goal[0] - self.boat.pos[0]
-    dist_y = self.goal[1] - self.boat.pos[1]
+        if dist_y == 0:
+            if dist_x == 0:
+                angle_to_goal = 0
+            elif dist_x > 0:
+                angle_to_goal = math.pi / 2
+            else:
+                angle_to_goal = 3 * math.pi / 2
+        elif dist_y > 0:
+            if dist_x >= 0:
+                angle_to_goal = math.atan(abs(dist_x) / abs(dist_y))
+            else:
+                angle_to_goal = 2 * math.pi - math.atan(abs(dist_x) / abs(dist_y))
+        else:
+            if dist_x >= 0:
+                angle_to_goal = math.pi - math.atan(abs(dist_x) / abs(dist_y))
+            else:
+                angle_to_goal = math.pi + math.atan(abs(dist_x) / abs(dist_y))
+        return angle_to_goal
 
-    if dist_y == 0:
-      if dist_x == 0:
-        angleToGoal = 0
-      elif dist_x > 0:
-        angleToGoal = math.pi/2
-      else:
-        angleToGoal = 3*math.pi/2
-    elif dist_y > 0:
-      if dist_x >= 0:
-        angleToGoal = math.atan(abs(dist_x)/abs(dist_y))
-      else:
-        angleToGoal = 2*math.pi - math.atan(abs(dist_x)/abs(dist_y))
-    else:
-      if dist_x >= 0:
-        angleToGoal = math.pi - math.atan(abs(dist_x)/abs(dist_y))
-      else:
-        angleToGoal = math.pi + math.atan(abs(dist_x)/abs(dist_y))
-    return angleToGoal
+    def update(self, action):
+        self.current_episode_length += 1
+        n1 = action % 11
+        n2 = action / 11
+        action1 = float((n1 - 5)) / 2
+        action2 = float((n2 - 5)) / 200
+        timestep = 1
+        self.boat.change_acceleration(action1)
+        self.boat.change_angular_acceleration(action2)
+        self.boat.update_position(timestep)
+        self.animate()
 
-  def update(self, action):
-    self.count += 1
-    n1 = action%11
-    n2 = action/11
-    action1 = float((n1-5))/2
-    action2 = float((n2-5))/200
-    timestep = 1
-    self.boat.changeAcceleration(action1)
-    self.boat.changeAngularAcceleration(action2)
-    self.boat.updatePosition(timestep)
-    if self.checkTerminal():
-      self.done = True
-    else:
-      self.done = False
+    def get_possible_actions(self):
+        possible_actions = range(121)
+        return possible_actions
 
-  def getPossibleActions(self):
-    possibleActions = range(121)
-    return possibleActions
+    def get_reward(self):
+        if self.check_in_goal():
+            reward = 0
+        else:
+            reward = -1  # math.exp((50.0 - self.getDistanceToGoal())/50.0)/math.exp(1.0)
+        return reward
 
-  def getReward(self):
-    if self.checkInGoal():
-      reward = 0
-    else:
-      reward = -1#math.exp((50.0 - self.getDistanceToGoal())/50.0)/math.exp(1.0)
-    return reward
+    def check_terminal(self):
+        if self.current_episode_length > self.maxEpisodeLength:
+            return True
+        elif self.check_in_goal():
+            return True
+        else:
+            return False
 
-  def checkTerminal(self):
-    if self.count > self.maxEpisodeLength:
-      return True
-    elif self.checkInGoal():
-      return True
-    else:
-      return False
+    def check_in_goal(self):
+        in_goal = False
+        goal_polygon = Point(self.goal[0], self.goal[1]).buffer(10)
+        boat_polygon = Point(self.boat.pos[0], self.boat.pos[1]).buffer(10)
+        if goal_polygon.intersects(boat_polygon):
+            in_goal = True
+        return in_goal
 
-  def checkInGoal(self):
-    inGoal = False
-    goalPoly = Point(self.goal[0], self.goal[1]).buffer(10)
-    boatPoly = Point(self.boat.pos[0], self.boat.pos[1]).buffer(10)
-    if goalPoly.intersects(boatPoly):
-      inGoal = True
-    return inGoal
+    def reset(self):
+        self.current_episode_length = 0
+        pos_x = self.width / 10 + random.random() * 4 * self.width / 5
+        pos_y = self.height / 10 + random.random() * 4 * self.height / 5
+        orientation = random.random() * 2 * math.pi
+        self.boat.reset_position([pos_x, pos_y, orientation])
+        self.goal = self.create_goal()
+        if self.render:
+            self.animate()
+            self.animate()
+            self.animate()
+            self.animate()
+            self.animate()
+            self.animate()
+        self.num_episodes += 1
+        self.num_figures_saved = 0
 
-  def reset(self):
-    self.__init__(width = self.width, height = self.height, maxEpisodeLength = self.maxEpisodeLength)
+    def initialise_display(self):
+        self.ax = self.fig.add_subplot(111)
+        self.boat_patch = patches.Polygon(self.boat.outline)
+        self.ax.add_patch(self.boat_patch)
+        self.goal_patch = patches.Circle(self.goal, radius=5, fc='g')
+        self.ax.add_patch(self.goal_patch)
+        self.ax.set_ylim([0, self.height])
+        self.ax.set_xlim([0, self.width])
+        self.ax.figure.canvas.draw()
 
-  def render(self):
-    if self.count % 2 == 0:
-      self.fig.clear()
-      ax = self.fig.add_subplot(111)
-      ax.add_patch(patches.Circle(self.goal, radius = 5, fc='g'))
-      ax.add_patch(patches.Polygon(self.boat.outline))
-      ax.plot([self.boat.outline[1][0], self.boat.outline[2][0]], [self.boat.outline[1][1], self.boat.outline[2][1]], color='red', linewidth=2)
-      ax.set_ylim([0,self.height])
-      ax.set_xlim([0,self.width])
-      ax.figure.canvas.draw()
-      self.fig.show()
-    if self.checkTerminal():
-      plt.close(self.fig)
-      self.fig = plt.figure()
+    def animate(self):
+        if self.render:
+            self.boat_patch.set_xy(self.boat.outline)
+            self.goal_patch.center = self.goal
+            self.ax.figure.canvas.draw()
+            self.fig.show()
+            self.save_figure()
 
-
-
-
-
-
-
-
-
-
+    def save_figure(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        dir_path += '/Videos/NavToGoalEnv/Episode-' + str(self.num_episodes)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        self.fig.savefig(dir_path + '/Image_' + str(self.num_figures_saved).zfill(5))
+        self.num_figures_saved += 1

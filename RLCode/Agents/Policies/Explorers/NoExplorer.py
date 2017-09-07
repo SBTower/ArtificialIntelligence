@@ -1,16 +1,13 @@
-import random
-
 class NoExplorer:
+    def __init__(self, possible_actions, continuous=False, epsilon=0.1, epsilon_decay=0, epsilon_min=0.1):
+        self.epsilon = epsilon
+        self.epsilonDecay = epsilon_decay
+        self.epsilonMin = epsilon_min
+        self.possibleActions = possible_actions
+        self.continuous = continuous
 
-  def __init__(self, possibleActions, continuous = False, epsilon = 0.1, epsilonDecay = 0, epsilonMin = 0.1):
-    self.epsilon = epsilon
-    self.epsilonDecay = epsilonDecay
-    self.epsilonMin = epsilonMin
-    self.possibleActions = possibleActions
-    self.continuous = continuous
+    def explore(self):
+        return False
 
-  def explore(self):
-    return False
-
-  def getExploratoryAction(self, originalAction):
-    return originalAction
+    def get_exploratory_action(self, original_action):
+        return original_action

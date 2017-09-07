@@ -1,40 +1,39 @@
-import copy
-import numpy as np
-
 class Environment:
+    def __init__(self):
+        pass
 
-  def __init__(self, name):
-    pass
+    def get_state(self):
+        return self.state
 
-  def getState(self):
-    return self.state
+    def get_possible_actions(self):
+        pass
 
-  def getPossibleActions(self):
-    pass
+    def get_reward(self):
+        return self.reward
 
-  def getReward(self):
-    return self.reward
+    def update(self, action):
+        pass
 
-  def update(self, action):
-    pass
+    def check_terminal(self):
+        return self.done
 
-  def checkTerminal(self):
-    return self.done
+    def reset(self):
+        self.__init__()
 
-  def reset(self):
-    self.__init__()
+    def enumerate_state(self, state):
+        return state
 
-  def enumerateState(self, state):
-    return state
+    def get_action_size(self):
+        return len(self.get_possible_actions())
 
-  def getActionSize(self):
-    return len(self.getPossibleActions())
+    def get_state_size(self):
+        return len(self.get_state())
 
-  def getStateSize(self):
-    return len(self.getState())
+    def animate(self):
+        pass
 
-  def render(self):
-    pass
+    def is_action_continuous(self):
+        return False
 
-  def isActionContinuous(self):
-    return False
+    def save_figure(self, num_fig):
+        pass
