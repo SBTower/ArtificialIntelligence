@@ -1,3 +1,0 @@
-- Reinforcement Learning with Unreal Engine
-- AI Universe
-- Simple RL demo suite
