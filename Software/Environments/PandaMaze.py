@@ -1,65 +1,97 @@
 import copy
-import os
+import time
 import numpy as np
 from .Environment import Environment
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+from math import pi, sin, cos
 
+from direct.showbase.ShowBase import ShowBase
+from direct.task import Task
+from direct.actor.Actor import Actor
 
-class MazeEnvironment(Environment):
-    def __init__(self, name='Maze1', render=False):
-        self.name = name
-        self.maze = self.create_maze(self.name)
-        self.start = [1, 1]
-        self.goal = [9, 11]
-        self.state = copy.copy(self.start)
-        self.render = render
-        self.num_figures_saved = 0
-        self.num_episodes = 0
-        self.fig = plt.figure()
-        self.initialise_display()
-        if self.render is True:
-            self.save_figure()
-            self.animate()
+class PandaEnvironment(ShowBase):
+    def __init__(self):
+        ShowBase.__init__(self)
+        self.Actors = []
+        self.Models = []
+        self.done = False
+        self.state = 0
+
+    def loadActor(self, model_file, texture_file=None, pos=[0,0,0], scale=[1,1,1]):
+        new_actor = Actor(model_file)
+        if texture_file:
+            texture = self.loader.loadTexture(texture_file)
+            new_actor.setTexture(texture, 1)
+        new_actor.setScale(scale[0], scale[1], scale[2])
+        new_actor.setPos(pos[0], pos[1], pos[2])
+        new_actor.reparentTo(self.render)
+        return new_actor
+
+    def loadModel(self, model_file, texture_file=None, pos=[0,0,0], scale=[1,1,1]):
+        new_model = self.loader.loadModel(model_file)
+        if texture_file:
+            texture = self.loader.loadTexture(texture_file)
+            new_model.setTexture(texture, 1)
+        new_model.setScale(scale[0], scale[1], scale[2])
+        new_model.setPos(pos[0], pos[1], pos[2])
+        new_model.reparentTo(self.render)
+        return new_model
+
+    def update(self, action):
+        pass
 
     def get_state(self):
-        return self.enumerate_state(self.state)
+        return self.state
 
-    def create_maze(self, name):
-        maze = []
-        if name is "Maze1":
-            maze = np.array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                             [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1],
-                             [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
-                             [1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1],
-                             [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
-                             [1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1],
-                             [1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1],
-                             [1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
-                             [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
-                             [1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-                             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-        elif name is "Maze2":
-            maze = np.array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                             [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-                             [1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-                             [1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                             [1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
-                             [1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-                             [1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1],
-                             [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
-                             [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-                             [1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1],
-                             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-        else:
-            print
-            "Unknown Maze. Loading Default"
-            self.create_maze("Maze1")
-        return maze
+    def get_possible_actions(self):
+        pass
 
-    def load_maze(self, name):
-        self.__init__(name)
+    def get_reward(self):
+        pass
+
+    def check_terminal(self):
+        return self.done
+
+    def reset(self):
+        self.__init__()
+
+    def enumerate_state(self, state):
+        return state
+
+    def get_action_size(self):
+        return len(self.get_possible_actions())
+
+    def get_state_size(self):
+        return len(self.get_state())
+
+    def animate(self):
+        pass
+
+    def is_action_continuous(self):
+        return False
+
+    def save_figure(self):
+        pass
+
+
+class PandaMaze(PandaEnvironment):
+    def __init__(self, name='PandaMaze', show_visuals=False):
+        PandaEnvironment.__init__(self)
+        self.name = name
+        self.show_visuals = show_visuals
+        self.Models.append(self.loadModel("Environments/Models/oldWall", scale=[0.25,0.25,0.25],pos=[0,1,0]))
+        for model in self.Models:
+            model.reparentTo(self.render)
+        self.goal = [3,3]
+        self.actor = self.loadActor("models/panda-model", pos=[0,0,0], scale=[0.0005,0.0005,0.0005])
+        base.disableMouse()
+        self.camera.setPos(0,0,15)
+        self.camera.setHpr(0,-90,0)
+        self.actor.reparentTo(self.render)
+        self.num_episodes = 0
+
+    def get_state(self):
+        return self.enumerate_state(self.actor.getPos())
 
     def get_reward(self):
         if self.check_terminal():
@@ -68,76 +100,39 @@ class MazeEnvironment(Environment):
             reward = -1
         return reward
 
+    def inWall(self):
+        return False
+
     def update(self, action):
-        previous_position = copy.copy(self.state)
+        previous_position = copy.copy(self.actor.getPos())
         if action == 0:
-            self.state[0] -= 1
+            self.actor.setPos(self.actor.getPos().getX() + 1, self.actor.getPos().getY(), self.actor.getPos().getZ())
         elif action == 1:
-            self.state[1] -= 1
+            self.actor.setPos(self.actor.getPos().getX(), self.actor.getPos().getY() + 1, self.actor.getPos().getZ())
         elif action == 2:
-            self.state[1] += 1
+            self.actor.setPos(self.actor.getPos().getX() - 1, self.actor.getPos().getY(), self.actor.getPos().getZ())
         elif action == 3:
-            self.state[0] += 1
-        if self.maze[self.state[0]][self.state[1]] == 1:
-            self.state = previous_position
-        self.animate()
+            self.actor.setPos(self.actor.getPos().getX(), self.actor.getPos().getY() - 1, self.actor.getPos().getZ())
+        if self.inWall == 1:
+            self.actor.setPos(previous_position)
+        print(self.actor.getPos())
+        time.sleep(1)
+        taskMgr.step()
+        time.sleep(1)
 
     def enumerate_state(self, state):
-        n = len(self.maze) * len(self.maze[0])
-        return np.identity(n)[state[0] * len(self.maze) + state[1]]
+        state = (self.actor.getPos().getX() * self.goal[0]) + self.actor.getPos().getY()
+        return [state]
 
     def check_terminal(self):
-        if self.state == self.goal:
+        if self.actor.getPos().getX() == self.goal[0] and self.actor.getPos().getY() == self.goal[1]:
             return True
         return False
 
     def reset(self):
-        self.state = copy.copy(self.start)
-        if self.render:
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
-            self.animate()
+        self.destroy()
         self.num_episodes += 1
-        self.num_figures_saved = 0
+        self.__init__(self)
 
     def get_possible_actions(self):
         return [0, 1, 2, 3]
-
-    def initialise_display(self):
-        self.ax = self.fig.add_subplot(111)
-        for row in range(len(self.maze)):
-            for column in range(len(self.maze[0])):
-                if [row, column] == self.state:
-                    self.position_patch = patches.Rectangle((column, row), 1, 1, facecolor='red')
-                    self.ax.add_patch(self.position_patch)
-                elif [row, column] == self.goal:
-                    self.ax.add_patch(patches.Rectangle((column, row), 1, 1, facecolor="green"))
-                elif self.maze[row][column] == 1:
-                    self.ax.add_patch(patches.Rectangle((column, row), 1, 1, facecolor="black"))
-        self.ax.autoscale()
-        self.ax.figure.canvas.draw()
-
-    def animate(self):
-        if self.render:
-            self.position_patch.set_x(self.state[1])
-            self.position_patch.set_y(self.state[0])
-            self.ax.figure.canvas.draw()
-            # self.fig.show()
-            self.save_figure()
-
-    def save_figure(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        dir_path += '/Videos/MazeEnv/Episode-' + str(self.num_episodes)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        self.fig.savefig(dir_path + '/Image_' + str(self.num_figures_saved).zfill(5))
-        self.num_figures_saved += 1

@@ -1,0 +1,89 @@
+<CoordinateSystem> { Z-up } 
+<Material> Material.001 {
+  <Scalar> diffr { 0.640000 }
+  <Scalar> diffg { 0.640000 }
+  <Scalar> diffb { 0.640000 }
+  <Scalar> specr { 0.500000 }
+  <Scalar> specg { 0.500000 }
+  <Scalar> specb { 0.500000 }
+  <Scalar> shininess { 12.5 }
+  <Scalar> ambr { 1.000000 }
+  <Scalar> ambg { 1.000000 }
+  <Scalar> ambb { 1.000000 }
+  <Scalar> emitr { 0.000000 }
+  <Scalar> emitg { 0.000000 }
+  <Scalar> emitb { 0.000000 }
+}
+
+<Material> Material.003 {
+  <Scalar> diffr { 0.640000 }
+  <Scalar> diffg { 0.640000 }
+  <Scalar> diffb { 0.640000 }
+  <Scalar> specr { 0.500000 }
+  <Scalar> specg { 0.500000 }
+  <Scalar> specb { 0.500000 }
+  <Scalar> shininess { 12.5 }
+  <Scalar> ambr { 1.000000 }
+  <Scalar> ambg { 1.000000 }
+  <Scalar> ambb { 1.000000 }
+  <Scalar> emitr { 0.000000 }
+  <Scalar> emitg { 0.000000 }
+  <Scalar> emitb { 0.000000 }
+}
+
+  <Group> Plane.001 {
+    <Transform> {
+      <Matrix4> {
+        5.060948848724365 0.0 0.0 0.0 
+        0.0 5.060948848724365 0.0 0.0 
+        0.0 0.0 5.060948848724365 0.0 
+        1.592742919921875 1.7228670120239258 16.1560115814209 1.0 
+      }
+    }
+    
+    <VertexPool> Plane.001 {
+    
+      <Vertex> 0 {-3.468206 -3.338082 16.156012
+      }
+      <Vertex> 1 {6.653692 -3.338082 16.156012
+      }
+      <Vertex> 2 {6.653692 6.783816 16.156012
+      }
+      <Vertex> 3 {-3.468206 6.783816 16.156012
+      }}
+    
+    
+    <Polygon> {
+      <MRef> { Material.003 }
+      <Normal> {0.000000 0.000000 1.000000}
+      <VertexRef> { 0 1 2 3 <Ref> { Plane.001 }} 
+    }
+  }
+  <Group> Plane {
+    <Transform> {
+      <Matrix4> {
+        3.4123687744140625 0.0 0.0 0.0 
+        0.0 3.4123687744140625 0.0 0.0 
+        0.0 0.0 3.4123687744140625 0.0 
+        -0.05737867206335068 -0.14393673837184906 0.3937169909477234 1.0 
+      }
+    }
+    
+    <VertexPool> Plane {
+    
+      <Vertex> 0 {-3.469748 -3.556305 0.393717
+      }
+      <Vertex> 1 {3.354990 -3.556305 0.393717
+      }
+      <Vertex> 2 {3.354990 3.268432 0.393717
+      }
+      <Vertex> 3 {-3.469748 3.268432 0.393717
+      }}
+    
+    
+    <Polygon> {
+      <MRef> { Material.001 }
+      <Normal> {0.000000 0.000000 1.000000}
+      <VertexRef> { 0 1 2 3 <Ref> { Plane }} 
+    }
+  }

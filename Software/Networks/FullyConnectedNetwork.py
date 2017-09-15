@@ -32,7 +32,7 @@ class FullyConnectedNetwork(NetworkBase):
         self.action_size = action_size
         self.scope = scope
         with tf.variable_scope(scope):
-            self.inputs = tf.placeholder(shape=np.concatenate([[None], state_size]).tolist(), dtype=tf.float32)
+            self.inputs = tf.placeholder(shape=[None, state_size], dtype=tf.float32)
             self.layers = [self.inputs]
             for i in range(len(layer_size)):
                self.layers.append(slim.fully_connected(self.layers[i], int(layer_size[i]), activation_fn=tf.nn.relu))
@@ -95,8 +95,8 @@ class FullyConnectedCriticNetwork(NetworkBase):
         self.action_size = action_size
         self.scope = scope
         with tf.variable_scope(scope):
-            self.inputs = tf.placeholder(shape=np.concatenate([[None], state_size]).tolist(), dtype=tf.float32)
-            self.action = tf.placeholder(shape=np.concatenate([[None], [action_size]]).tolist(), dtype=tf.float32)
+            self.inputs = tf.placeholder(shape=[None, state_size], dtype=tf.float32)
+            self.action = tf.placeholder(shape=[None, action_size], dtype=tf.float32)
 
             self.layer1 = slim.fully_connected(self.inputs, 400, activation_fn=tf.nn.relu)
             self.W2 = tf.Variable(tf.random_uniform([400, 300], -.01, .01))

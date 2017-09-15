@@ -18,18 +18,18 @@ class QLearning():
 
     def defineUpdateOperations(self):
         self.updated_value = tf.placeholder(shape=[1, self.network.action_size], dtype=tf.float32)
-        self.loss = tf.reduce_sum(tf.square(self.updated_value - self.network.outputLayer))
+        self.loss = tf.reduce_sum(tf.square(self.updated_value - self.network.policyLayer))
         self.trainer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
 
         self.updateModel = self.trainer.minimize(self.loss)
 
     def update(self, batch):
         for experience in batch:
-            estimated_future_value = self.sess.run(self.network.outputLayer,
+            estimated_future_value = self.sess.run(self.network.policyLayer,
                                                    feed_dict={self.network.inputs: [experience.next_state]})
             max_estimated_future_value = np.max(estimated_future_value)
 
-            updated_action_value = self.sess.run(self.network.outputLayer,
+            updated_action_value = self.sess.run(self.network.policyLayer,
                                                  feed_dict={self.network.inputs: [experience.state]})
             updated_action_value[0, experience.action] = experience.reward + self.discount_factor * max_estimated_future_value
 
