@@ -18,17 +18,17 @@ import numpy as np
 import tensorflow as tf
 from gym import wrappers
 
-numGames = 70
-step = 10
+numGames = 200
+step = 2
 rewards = np.zeros(numGames)
 avgRewards = []
-network_to_load = 'Cartpole50'
-previous_number_of_episodes = 50
-save_network_file_name = 'Cartpole'
+network_to_load = None
+previous_number_of_episodes = 0
+save_network_file_name = None
 render_environment = True
-epsilon = 0.000
-epsilon_decay = 0.0005
-epsilon_min = 0.0000
+epsilon = 1.000
+epsilon_decay = 0.005
+epsilon_min = 0.01
 batch_size = 500
 update_target_rate = 1
 learning_rate = 0.001  # alpha

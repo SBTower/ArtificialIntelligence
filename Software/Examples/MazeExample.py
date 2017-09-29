@@ -19,13 +19,13 @@ import tensorflow as tf
 from gym import wrappers
 
 numGames = 100
-step = 5
+step = 10
 rewards = np.zeros(numGames)
 avgRewards = []
 network_to_load = None
 previous_number_of_episodes = 0
 save_network_file_name = None
-render_environment = False
+render_environment = True
 epsilon = 0.05
 epsilon_decay = 0.1
 epsilon_min = 0.001

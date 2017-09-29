@@ -9,8 +9,8 @@ class TabularNetwork:
         with tf.variable_scope(scope):
             self.inputs = tf.placeholder(shape=[1, state_size], dtype=tf.float32)
             self.W = tf.Variable(tf.random_uniform([state_size, action_size], 0, 0.01))
-            self.outputLayer = tf.matmul(self.inputs, self.W)
-            self.maxOutputNode = tf.argmax(self.outputLayer, 1)
+            self.policyLayer = tf.matmul(self.inputs, self.W)
+            self.maxOutputNode = tf.argmax(self.policyLayer, 1)
 
     def save_network(self, sess, filename):
         dir_path = os.path.dirname(os.path.realpath(__file__))

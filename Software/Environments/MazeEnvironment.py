@@ -131,7 +131,7 @@ class MazeEnvironment(Environment):
             self.position_patch.set_x(self.state[1])
             self.position_patch.set_y(self.state[0])
             self.ax.figure.canvas.draw()
-            # self.fig.show()
+            self.fig.show()
             self.save_figure()
 
     def save_figure(self):
