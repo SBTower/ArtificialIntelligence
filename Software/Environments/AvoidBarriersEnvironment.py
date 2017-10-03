@@ -1,3 +1,6 @@
+"""Author: Stuart Tower
+"""
+
 from scipy import *
 import copy
 import math
@@ -14,21 +17,39 @@ import matplotlib.patches as patches
 
 
 class AvoidBarriersEnvironment(Environment):
-    def __init__(self, width=200, height=200, max_episode_length=100, render=False, save_video = False):
+    """An environment that models an autonomous vehicle that has to move around an environment without hitting any of
+    the obstacles. The environment uses a very simple model of the movement of the boat, assuming the agent can directly
+    control acceleration (linear and angular)
+
+    """
+    def __init__(self, width=200, height=200, max_episode_length=100, render=False, save_video = False, number_of_obstacles = 4):
+        """Initialise the environment
+
+        :param width: The width of the playground the boat can explore
+        :param height: The height of the playground the boat can explore
+        :param max_episode_length: The maximum length of the episode
+        :param render: A flag, if true the environment will be drawn to the screen
+        :param save_video: A flag, if true the environment will save a video to a file
+        :param number_of_obstacles: The number of obstacles to place in the playground
+        """
         self.width = width
         self.height = height
         self.max_episode_length = max_episode_length
         self.num_figures_saved = 0
-        self.num_episodes = 0
+        self.num_episodes = 0   # A count of the number of episodes completed
         self.render = render
         self.save_video = save_video
         self.current_episode_length = 0
-        self.number_of_obstacles = 4
+        self.number_of_obstacles = number_of_obstacles
+
+        # Randomly initialise the position and orientation of the boat
         pos_x = self.width / 10 + random.random() * 4 * self.width / 5
         pos_y = self.height / 10 + random.random() * 4 * self.height / 5
         orientation = random.random() * 2 * math.pi
         self.boat = SimpleVehicle([pos_x, pos_y, orientation])
+        # Generate the barriers
         self.barriers = self.create_barriers()
+        # Randomly re-position the boat until it doesn't overlap with the barriers
         while self.has_crashed() is True:
             pos_x = self.width / 10 + random.random() * 4 * self.width / 5
             pos_y = self.height / 10 + random.random() * 4 * self.height / 5
@@ -41,6 +62,11 @@ class AvoidBarriersEnvironment(Environment):
             self.animate()
 
     def create_barriers(self):
+        """Generate the barriers that the boat has to avoid
+
+        :return: The barriers that describe both the edge of the playground and the obstacles within the environment
+        """
+        # Generate the barriers around the outside of the playground
         barrier1 = [[0, 5], [self.width, 5], [self.width, 0], [0, 0]]
         barrier2 = [[0, self.height - 5], [self.width, self.height - 5], [self.width, self.height], [0, self.height]]
         barrier3 = [[self.width - 5, self.height], [self.width, self.height], [self.width, 0], [self.width - 5, 0]]
@@ -48,6 +74,7 @@ class AvoidBarriersEnvironment(Environment):
 
         barriers = [barrier1, barrier2, barrier3, barrier4]
 
+        # Generate the barriers describing the obstacles within the playground
         for i in range(self.number_of_obstacles):
             random_start_x = random.uniform(20, self.width - 20)
             random_start_y = random.uniform(20, self.height - 20)
@@ -60,8 +87,16 @@ class AvoidBarriersEnvironment(Environment):
         return barriers
 
     def get_state(self):
+        """Gets the state of the boat, which includes the readings from a number of range sensors positioned at the
+        corners of the boat
+
+        :return: The readings from each of the boats sensors
+        """
+        # Position the sensors at the corners of the boat
         sensor_locations = np.array(self.boat.outline)
         sensor_readings = []
+
+        # Use trigonometry to calculate the distance from the sensor source to the nearest barrier
         for i in range(len(sensor_locations)):
 
             if i == 0:
@@ -120,17 +155,24 @@ class AvoidBarriersEnvironment(Environment):
                 if sd < sensor_readings[2 * i + 1]:
                     sensor_readings[2 * i + 1] = sd
 
+        # Include the speed and velocity of the boat in the state of the environment
         sensor_readings.append(copy.copy(self.boat.speed))
         sensor_readings.append(copy.copy(self.boat.angularVelocity))
 
         return sensor_readings
 
     def update(self, action):
+        """Update the environment based on the action the agent has taken. The action is a discretisation containing the
+        linear and angular acceleration
+
+        :param action: The action the agent has taken
+        :return: None
+        """
         self.current_episode_length += 1
         n1 = action % 11
         n2 = action / 11
-        action1 = float((n1 - 5)) / 2
-        action2 = float((n2 - 5)) / 200
+        action1 = float((n1 - 5)) / 2   # Linear acceleration
+        action2 = float((n2 - 5)) / 200 # Angular acceleration
         timestep = 0.5
         self.boat.change_acceleration(action1)
         self.boat.change_angular_acceleration(action2)
@@ -138,10 +180,18 @@ class AvoidBarriersEnvironment(Environment):
         self.animate()
 
     def get_possible_actions(self):
+        """Returns the list of actions available to the agent
+
+        :return: Set of possible actions
+        """
         possible_actions = range(121)
         return possible_actions
 
     def get_reward(self):
+        """Gets the reward to give the agent based on the current state
+
+        :return: The reward to the agent in the current state
+        """
         if self.has_crashed():
             reward = -1000
         else:
@@ -149,6 +199,10 @@ class AvoidBarriersEnvironment(Environment):
         return reward
 
     def check_terminal(self):
+        """Checks if the current state is a terminal state
+
+        :return: A boolean which is true if the current state is terminal
+        """
         if self.has_crashed():
             return True
         elif self.current_episode_length> self.max_episode_length:
@@ -157,6 +211,10 @@ class AvoidBarriersEnvironment(Environment):
             return False
 
     def has_crashed(self):
+        """Checks if the boat has crashed into a barrier
+
+        :return: A boolean which is true if the boat has crashed
+        """
         crashed = False
         boat = np.array(self.boat.outline)
         boat_polygon = shapely.geometry.Polygon(boat)
@@ -167,6 +225,10 @@ class AvoidBarriersEnvironment(Environment):
         return crashed
 
     def reset(self):
+        """Resets the current environment
+
+        :return: None
+        """
         self.current_episode_length = 0
         pos_x = self.width / 10 + random.random() * 4 * self.width / 5
         pos_y = self.height / 10 + random.random() * 4 * self.height / 5
@@ -189,6 +251,10 @@ class AvoidBarriersEnvironment(Environment):
         self.num_figures_saved = 0
 
     def initialise_display(self):
+        """Initialises the display using matplotlib
+
+        :return: None
+        """
         self.ax = self.fig.add_subplot(111)
         self.barrier_patches = []
         for i in range(len(self.barriers)):
@@ -201,6 +267,10 @@ class AvoidBarriersEnvironment(Environment):
         self.ax.figure.canvas.draw()
 
     def animate(self):
+        """Updates the display to represent the current state and saves an image if specified
+
+        :return: None
+        """
         if self.render:
             for i in range(len(self.barriers[4:])):
                 self.barrier_patches[i+4].set_xy(self.barriers[i+4])
@@ -211,6 +281,10 @@ class AvoidBarriersEnvironment(Environment):
                 self.save_figure()
 
     def save_figure(self):
+        """Saves the current visualisation as an image
+
+        :return: None
+        """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dir_path += '/Videos/AvoidBarriersEnv/Episode-' + str(self.num_episodes)
         if not os.path.exists(dir_path):

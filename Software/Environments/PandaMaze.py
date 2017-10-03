@@ -1,3 +1,6 @@
+"""Author: Stuart Tower
+"""
+
 import copy
 import time
 import numpy as np
@@ -10,6 +13,9 @@ from direct.task import Task
 from direct.actor.Actor import Actor
 
 class PandaEnvironment(ShowBase):
+    """An environment testing the integration with Panda3D.
+    Still in progress.
+    """
     def __init__(self):
         ShowBase.__init__(self)
         self.Actors = []

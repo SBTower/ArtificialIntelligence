@@ -1,8 +1,20 @@
+"""Author: Stuart Tower
+"""
+
 import math
 
 
 class SimpleVehicle:
+    """A class representing an autonomous vehicle in 2D space
+    """
     def __init__(self, pos=None, width=15, length=30, sensor_range=100):
+        """
+
+        :param pos: The position of the vehicle, in the form [x, y, heading]
+        :param width: The width of the vehicle
+        :param length: The length of the vehicle
+        :param sensor_range: The range of the vehicles sensors
+        """
         self.sensor_range = sensor_range
         self.width = width
         self.length = length
@@ -22,6 +34,10 @@ class SimpleVehicle:
         self.outline = self.update_outline()
 
     def update_outline(self):
+        """Get the lines describing the vehicle at its current position and heading
+
+        :return: The outline of the vehicle
+        """
         x_mid_1 = self.pos[0] - (self.length / 2) * math.sin(self.pos[2])
         y_mid_1 = self.pos[1] - (self.length / 2) * math.cos(self.pos[2])
 
@@ -44,6 +60,11 @@ class SimpleVehicle:
         return outline
 
     def update_position(self, time):
+        """Update the position of the boat assuming constant acceleration over the input time period
+
+        :param time: The time in seconds to move forward in time
+        :return: None
+        """
         self.angularVelocity += self.angularAcceleration * time
         if abs(self.angularVelocity) > self.maxAngularVelocity:
             self.angularVelocity = math.copysign(self.maxAngularVelocity, self.angularVelocity)
@@ -65,12 +86,28 @@ class SimpleVehicle:
         self.outline = self.update_outline()
 
     def change_acceleration(self, acceleration):
+        """Update the linear acceleration of the vehicle
+
+        :param acceleration: The new linear acceleration of the vehicle
+        :return:
+        """
         self.acceleration = acceleration
 
     def change_angular_acceleration(self, angular_acceleration):
+        """Update the angular acceleration of the boat
+
+        :param angular_acceleration: The new angular acceleration of the boat
+        :return:
+        """
         self.angularAcceleration = angular_acceleration
 
     def reset_position(self, pos):
+        """Reset the position of the boat to the input position.
+        The input position is of the form [x, y, heading]
+
+        :param pos: The new position of the boat
+        :return:
+        """
         if pos is None:
             self.pos = [2 * self.length, 200, math.pi / 2]
         else:

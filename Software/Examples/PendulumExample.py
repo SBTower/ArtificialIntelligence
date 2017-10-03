@@ -27,11 +27,11 @@ previous_number_of_episodes = 0
 save_network_file_name = 'Pendulum'
 render_environment = True
 epsilon = 1.0
-epsilon_decay = 0.00005
-epsilon_min = 0.05
-batch_size = 200
+epsilon_decay = 0.005
+epsilon_min = 0.005
+batch_size = 100
 update_target_rate = 10
-learning_rate = 0.002  # alpha
+learning_rate = 0.001  # alpha
 number_of_planning_steps = 0
 discount_factor = 0.99
 

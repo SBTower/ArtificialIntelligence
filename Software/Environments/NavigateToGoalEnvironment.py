@@ -1,3 +1,6 @@
+"""Author: Stuart Tower
+"""
+
 from scipy import *
 import math
 import random
@@ -10,7 +13,16 @@ import matplotlib.patches as patches
 
 
 class NavigateToGoalEnvironment(Environment):
+    """An environment describing an autonomous vehicle navigating to a defined waypoint
+    """
     def __init__(self, width=200, height=200, max_episode_length=100, render=False):
+        """
+
+        :param width: The width of the playground the autonomous vehicle can move through
+        :param height: The height of the playground the autonomous vehicle can move through
+        :param max_episode_length: The maximum length of a single episode in time steps
+        :param render: A flag describing whether or not to render the environment to the screen
+        """
         self.width = width
         self.height = height
         self.maxEpisodeLength = max_episode_length
@@ -30,6 +42,11 @@ class NavigateToGoalEnvironment(Environment):
             self.animate()
 
     def get_state(self):
+        """Get the state of the environment
+        The state representation is a combination of position and velocity of the boat and goal.
+
+        :return: The current state
+        """
         sensor_readings = []
 
         #    sensor_readings.append(copy.copy(self.boat.pos[0]))
@@ -48,18 +65,30 @@ class NavigateToGoalEnvironment(Environment):
         return sensor_readings
 
     def create_goal(self):
+        """Create the target waypoint for the autonomous vehicle
+
+        :return: The location of the goal (waypoint) the vehicle has to navigate towards
+        """
         goal_x = self.width / 10 + random.random() * 4 * self.width / 5
         goal_y = self.height / 10 + random.random() * 4 * self.height / 5
         goal = [goal_x, goal_y]
         return goal
 
     def get_distance_to_goal(self):
+        """Get the current straight line distance to the goal
+
+        :return: The current distance to the goal
+        """
         dist_x = self.goal[0] - self.boat.pos[0]
         dist_y = self.goal[1] - self.boat.pos[1]
         distance = math.sqrt(dist_x * dist_x + dist_y * dist_y)
         return distance
 
     def get_angle_to_goal(self):
+        """Get the current angle between the boats heading and the heading towards the goal
+
+        :return: The current bearing to the goal
+        """
         dist_x = self.goal[0] - self.boat.pos[0]
         dist_y = self.goal[1] - self.boat.pos[1]
 
@@ -83,6 +112,11 @@ class NavigateToGoalEnvironment(Environment):
         return angle_to_goal
 
     def update(self, action):
+        """Update the environment with the agent taking the input action
+
+        :param action: The action taken by the agent
+        :return: None
+        """
         self.current_episode_length += 1
         n1 = action % 11
         n2 = action / 11
@@ -95,10 +129,18 @@ class NavigateToGoalEnvironment(Environment):
         self.animate()
 
     def get_possible_actions(self):
+        """Get the set of possible actions available to the agent
+
+        :return: The set of p[ossible actions available to the agent
+        """
         possible_actions = range(121)
         return possible_actions
 
     def get_reward(self):
+        """Get the reward to attribute to the agent based on the current state
+
+        :return: The reward to attribute to the agent
+        """
         if self.check_in_goal():
             reward = 0
         else:
@@ -106,6 +148,11 @@ class NavigateToGoalEnvironment(Environment):
         return reward
 
     def check_terminal(self):
+        """Check if the environment is in a terminal state
+        The state is terminal if the episode is longer than the allowable limit, or if the agent is at the goal
+
+        :return: A flag, true if the environment is in a terminal state
+        """
         if self.current_episode_length > self.maxEpisodeLength:
             return True
         elif self.check_in_goal():
@@ -114,6 +161,10 @@ class NavigateToGoalEnvironment(Environment):
             return False
 
     def check_in_goal(self):
+        """Check if the agent is currently in the goal
+
+        :return: A flag, true if the agent is currently in the goal
+        """
         in_goal = False
         goal_polygon = Point(self.goal[0], self.goal[1]).buffer(10)
         boat_polygon = Point(self.boat.pos[0], self.boat.pos[1]).buffer(10)
@@ -122,6 +173,10 @@ class NavigateToGoalEnvironment(Environment):
         return in_goal
 
     def reset(self):
+        """Reset the environment to its initial state
+
+        :return: None
+        """
         self.current_episode_length = 0
         pos_x = self.width / 10 + random.random() * 4 * self.width / 5
         pos_y = self.height / 10 + random.random() * 4 * self.height / 5
@@ -139,6 +194,10 @@ class NavigateToGoalEnvironment(Environment):
         self.num_figures_saved = 0
 
     def initialise_display(self):
+        """Initialise the display for drawing the environment to the screen
+
+        :return: None
+        """
         self.ax = self.fig.add_subplot(111)
         self.boat_patch = patches.Polygon(self.boat.outline)
         self.ax.add_patch(self.boat_patch)
@@ -149,6 +208,10 @@ class NavigateToGoalEnvironment(Environment):
         self.ax.figure.canvas.draw()
 
     def animate(self):
+        """Update the visualisation of the environment
+
+        :return: None
+        """
         if self.render:
             self.boat_patch.set_xy(self.boat.outline)
             self.goal_patch.center = self.goal
@@ -157,6 +220,10 @@ class NavigateToGoalEnvironment(Environment):
             self.save_figure()
 
     def save_figure(self):
+        """Save the current visualisation of the environment to an image
+
+        :return: None
+        """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dir_path += '/Videos/NavToGoalEnv/Episode-' + str(self.num_episodes)
         if not os.path.exists(dir_path):

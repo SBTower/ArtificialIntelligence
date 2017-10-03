@@ -1,3 +1,9 @@
+"""Author: Stuart Tower
+
+Runs an experiment with the specified environment and agent
+Once a successful experiment has been run, the code used should be saved to the 'examples' folder
+"""
+
 from Controller import BatchController, OrderedController
 from Environments.AvoidBarriersEnvironment import AvoidBarriersEnvironment
 from Environments.NavigateToGoalEnvironment import NavigateToGoalEnvironment
@@ -16,8 +22,8 @@ from Networks.TabularNetwork import TabularNetwork
 
 import numpy as np
 import tensorflow as tf
-from gym import wrappers
 
+# Define the parameters that describe the experiment
 numGames = 5000
 step = 50
 rewards = np.zeros(numGames)
@@ -35,22 +41,25 @@ learning_rate = 0.0001  # alpha
 number_of_planning_steps = 0
 discount_factor = 0.99
 
+# Specify the environment to use
 env = GymEnvironment('Pendulum-v0')
 
 env.num_episodes = previous_number_of_episodes
 
 possible_actions = env.get_possible_actions()
 
+# Define the networks to use in the policy
 actor_network = FullyConnectedNetwork(scope='actor', state_size=env.get_state_size(), action_size=env.get_action_size(), layer_size=[400, 300])
 critic_network = FullyConnectedCriticNetwork(scope='critic', state_size=env.get_state_size(), action_size=env.get_action_size())
 
 with tf.Session() as sess:
-
+    # Specify the learner to use
     learner = DDPG(sess, actor_network=actor_network, critic_network=critic_network, learning_rate=learning_rate, discount_factor=discount_factor)
-
+    # Specify the learner to use
     explorer = EpsilonGreedyExplorer(possible_actions=possible_actions, continuous=env.is_action_continuous(),
                                      epsilon=epsilon,
                                      epsilon_decay=epsilon_decay, epsilon_min=epsilon_min)
+    # Build the agent, policy and controller
     policy = Policy(learner=learner, explorer=explorer)
     agent = Agent(policy)
     controller = BatchController(environment=env, agent=agent, batch_size=batch_size, update_target_rate=update_target_rate)
@@ -58,6 +67,7 @@ with tf.Session() as sess:
     if network_to_load is not None:
         controller.agent.policy.learner.actor_network.load_network(sess, network_to_load)
 
+    # Run the experiment
     for n in range(numGames):
         if n % step == 0 and n >= 0 and render_environment is True:
             controller.env.render = True

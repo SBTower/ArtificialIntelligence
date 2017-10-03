@@ -1,3 +1,6 @@
+"""Author: Stuart Tower
+"""
+
 from scipy import *
 import math
 import numpy as np
@@ -8,7 +11,16 @@ import matplotlib.patches as patches
 
 
 class PMEnv(Environment):
+    """An environment representing a predictive maintenance problem
+    There are a number of assets that degrade in health, and the timing of maintenance needs to be found by the agent
+    """
     def __init__(self, number_of_assets=25, max_episode_length=1000, render=False):
+        """Initialise the environment
+
+        :param number_of_assets: The number of assets in the system
+        :param max_episode_length: The maximum length of the episode
+        :param render: A flag determining whether to render the environment to the screen
+        """
         self.numberOfAssets = number_of_assets
         self.asset_healths = self.initialise_asset_healths()
         self.assetHealthDecreaseRate = np.zeros(self.numberOfAssets)
@@ -26,18 +38,37 @@ class PMEnv(Environment):
             self.animate()
 
     def initialise_asset_healths(self):
+        """Initialise the health of the assets
+
+        :return: The initial health of all of the assets
+        """
         asset_healths = np.zeros(self.numberOfAssets)
         for i in range(len(asset_healths)):
             asset_healths[i] = random.uniform(0.9, 1.0)
         return asset_healths
 
     def get_state(self):
+        """Get the current state of the environment. This is a list of the current health of the assets.
+
+        :return: The current health of all of the assets
+        """
         return self.asset_healths
 
     def get_action_size(self):
+        """Get the number of actions available to the agent
+
+        :return: The number of actions available to the agent
+        """
         return self.numberOfAssets + 1
 
     def update(self, action):
+        """Update the environment by having the agent perform the input action.
+        The agent can either perform maintenance on an asset, or do nothing. Doing maintenance has a cost, and an asset
+        with low health also has a cost
+
+        :param action: The action chosen by the agent
+        :return: None
+        """
         self.latestAction = action
         self.current_episode_length += 1
         self.maintenanceCost = 0.0
@@ -56,10 +87,18 @@ class PMEnv(Environment):
         self.animate()
 
     def get_possible_actions(self):
+        """Get the set of possible actions
+
+        :return: The set of possible actions
+        """
         possible_actions = range(self.numberOfAssets + 1)
         return possible_actions
 
     def get_reward(self):
+        """Calculate the reward to give to the agent
+
+        :return: The reward to attribute to the agent
+        """
         reward = 0
         for health in self.asset_healths:
             if health < 0.75:
@@ -68,12 +107,20 @@ class PMEnv(Environment):
         return reward
 
     def check_terminal(self):
+        """Check if the environment is in a terminal state
+
+        :return: A flag, true if the environment is in a terminal state
+        """
         if self.current_episode_length >= self.maxEpisodeLength:
             return True
         else:
             return False
 
     def reset(self):
+        """Reset the environment to the initial state
+
+        :return: None
+        """
         self.asset_healths = self.initialise_asset_healths()
         self.assetHealthDecreaseRate = np.zeros(self.numberOfAssets)
         self.maintenanceCost = 0.0
@@ -90,6 +137,10 @@ class PMEnv(Environment):
         self.num_figures_saved = 0
 
     def initialise_display(self):
+        """Initialise the display for drawing the environment to the screen
+
+        :return: None
+        """
         self.ax = self.fig.add_subplot(111)
         self.current_health_patches = []
         for i in range(len(self.asset_healths)):
@@ -102,6 +153,10 @@ class PMEnv(Environment):
         self.ax.figure.canvas.draw()
 
     def animate(self):
+        """Update the visualisation of the environment on the screen
+
+        :return: None
+        """
         if self.render:
             for i in range(len(self.current_health_patches)):
                 self.current_health_patches[i].set_height(self.asset_healths[i])
@@ -114,6 +169,10 @@ class PMEnv(Environment):
             self.save_figure()
 
     def save_figure(self):
+        """Save the current visualisation to an image
+
+        :return: None
+        """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dir_path += '/Videos/PredictiveMaintenanceEnv/Episode-' + str(self.num_episodes)
         if not os.path.exists(dir_path):
